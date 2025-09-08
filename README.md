@@ -56,6 +56,4 @@ python deepu_prs_train.py   --file_path "HDL"   --biomarker "HDL"   --lr 1e-3   
 
 ---
 
-## License
-MIT (see `LICENSE`).
 
