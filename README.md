@@ -1,7 +1,7 @@
 # DeepU-PRS
 
 Uncertainty-aware deep prior estimation for polygenic risk scoring (PRS).
-This repository provides a cleaned, reproducible training script and minimal scaffolding to run DeepU‑PRS on real data or a synthetic smoke test.
+This repository provides a cleaned, reproducible training script and minimal scaffolding to run DeepU‑PRS.
 
 > Key idea: a fully connected (FC) network predicts SNP-level prior means and log-variances (aleatoric uncertainty) from functional annotations. Priors are propagated through sparse LD to obtain architecture-aware effect-size priors for PRS.
 
@@ -52,30 +52,7 @@ python deepu_prs_train.py   --file_path "HDL"   --biomarker "HDL"   --lr 1e-3   
 
 ---
 
-## Synthetic smoke test
-
-To verify installation without large data, run:
-```
-python examples/synthetic_smoketest.py
-```
-This creates minimal dummy files under `./_synthetic/` and performs a 1–2 epoch run.
-
----
-
-## Data availability (template)
-
-This study used data from the UK Biobank (application ID: XXXX) and the All of Us Research Program (project ID: XXXX). Access requires approval from the respective access committees (UK Biobank: https://www.ukbiobank.ac.uk; All of Us: https://www.researchallofus.org).
-
-All code for DeepU-PRS training, uncertainty modeling, and PRS evaluation is provided in this repository. For baseline comparisons, we used:
-- BLD-LDAK: https://dougspeed.com/
-- SBayesRC (GCTB): http://cnsgenomics.com/software/gctb/
-
-Processed summary outputs (per-phenotype R², sparsity metrics, simulation results) should be released as Supplementary materials in the paper repository.
-
----
-
 ## Citation
-Please cite the forthcoming paper as it becomes available. A placeholder `CITATION.cff` is included.
 
 ---
 
