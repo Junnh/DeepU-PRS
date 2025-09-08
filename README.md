@@ -16,24 +16,6 @@ This repository provides a cleaned, reproducible training script and minimal sca
 
 ---
 
-## Installation
-
-```bash
-# 1) Create / activate a virtual environment (recommended)
-python -m venv .venv && source .venv/bin/activate
-
-# 2) Install PyTorch that matches your CUDA (see https://pytorch.org)
-# Example (CUDA 12.1):
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-
-# 3) Install project deps
-pip install -r requirements.txt
-```
-
-> Note: `torch-geometric` wheels depend on your CUDA + torch version. If installation fails, follow the instructions at https://pytorch-geometric.readthedocs.io/ .
-
----
-
 ## Quick start (real data)
 
 ```
