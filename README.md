@@ -171,7 +171,6 @@ done
 
 ## 5) Tips & troubleshooting
 
-* **Device/Memory**: Training and LD ops run on CPU by design to keep memory usage predictable. If you later migrate FCNet to GPU, keep LD ops on CPU and ensure tensors are moved appropriately to avoid autograd breaks.
 * **Shapes**: Ensure `edge_index.npy` has shape `(2, E)` (else it’s transposed). `chrld_*.npy` should have three columns: `PredictorA, PredictorB, r2`.
 * **SNP ID consistency**: The intersection logic keeps LD edges only if **both SNPs** exist in `summaries` for that chromosome.
 * **Guard on `Stat`**: Non‑positive `Stat` is clamped to `1e-6`.
