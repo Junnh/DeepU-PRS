@@ -179,6 +179,3 @@ done
 ---
 
 ## 6) Citation & license
-
-* Add your preferred license (e.g., MIT) at repo root.
-* If you publish work using this code, please cite your paper/resources here.
