@@ -63,21 +63,26 @@ DeepU-PRS expects a specific directory layout for annotations, summary statistic
 ├── maf/
 │   └── plink.frq                    # Reference MAF (CHR, SNP, MAF...)
 └── ld/
+```
 
-### Required columns
+### Required Columns
+Ensure your input files contain the following columns:
 
-* **`annotations/annotation.csv`**: `Predictor, feat1, feat2, ...`
-  The script will add a `chr` column if missing by parsing `Predictor` as `chr:pos:ref:alt`‑like.
-* **`summaries/*.summaries`**: at least `Predictor`, `Stat`, `n`.
-* **`maf/plink.frq`**: at least `CHR`, `SNP`, `MAF`.
+* **`annotations/annotation.csv`**
+    * Required: `Predictor`, `feat1`, `feat2`, ... (and other annotation features)
+    * *Note:* If the `chr` column is missing, the script will automatically extract it by parsing the `Predictor` column (expected format: `chr:pos:ref:alt`).
+* **`summaries/*.summaries`**
+    * Required: `Predictor` (SNP ID), `Stat` (Test statistic), `n` (Sample size).
+* **`maf/plink.frq`**
+    * Required: `CHR`, `SNP`, `MAF`.
 
-> The LD files are *looked up only*, not created, by this repo. Ensure your LD precomputation matches the SNP identifiers used in `summaries`.
+> **Important:** The LD files are *looked up only*, not created by this repository. Ensure your precomputed LD files use SNP identifiers consistent with those in your `summaries` file.
 
 ---
 
-## 2) Training script
+## 2) Training Script
 
-Main entry: **`deepu_prs_refactored.py`**
+The main training script is `deepu_prs_refactored.py`.
 
 ```bash
 python deepu_prs_refactored.py \
@@ -89,7 +94,6 @@ python deepu_prs_refactored.py \
   --base_dir /path/to/base_dir \
   --output_dir /path/to/output_dir
 ```
-
 ### Arguments
 
 * `--file_path` *(str, required)*: used only to name the output subfolder.
