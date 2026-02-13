@@ -73,7 +73,15 @@ DeepU-PRS expects a specific directory layout for annotations, summary statistic
 
 > The LD files are *looked up only*, not created, by this repo. Ensure your LD precomputation matches the SNP identifiers used in `summaries`.
 
+Required columns
+annotations/annotation.csv: Predictor, feat1, feat2, ...
+The script will add a chr column if missing by parsing Predictor as chr:pos:ref:alt‑like.
 
+summaries/*.summaries: at least Predictor, Stat, n.
+
+maf/plink.frq: at least CHR, SNP, MAF.
+
+Note: The LD files are looked up only, not created, by this repo. Ensure your LD precomputation matches the SNP identifiers used in summaries.
 ---
 
 ## 3) Training script
