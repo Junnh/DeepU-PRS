@@ -1,30 +1,68 @@
 # DeepU-PRS
 
-Uncertainty-aware deep prior estimation for polygenic risk scoring (PRS).
+**Uncertainty-aware Deep Prior Estimation for Polygenic Risk Scoring (PRS)**
 
-> Key idea: a fully connected (FC) network predicts SNP-level prior means and log-variances (aleatoric uncertainty) from functional annotations. Priors are propagated through sparse LD to obtain architecture-aware effect-size priors for PRS.
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-1.12%2B-orange)](https://pytorch.org/)
+
+## Overview
+
+**DeepU-PRS** is a deep learning framework designed to improve Polygenic Risk Scoring by incorporating nonlinear functional annotations and modeling aleatoric uncertainty. This repository provides a cleaned, reproducible training script and minimal scaffolding to run DeepU‑PRS.
+
+> **Key Idea:** A fully connected (FC) network predicts SNP-level prior means and log-variances (aleatoric uncertainty) from functional annotations. These priors are propagated through sparse Linkage Disequilibrium (LD) structures to obtain architecture-aware effect-size priors for downstream Bayesian PRS models.
+
+### Key Features
+* **Aleatoric Uncertainty Modeling:** Predicts mean and log-variance with **deep ensemble support** (run the script multiple times with different `--seed`).
+* **Sparse LD Integration:** Efficiently applies chromosome-wise sparse LD matrices.
+* **Architecture-Aware:** Outputs per-chromosome priors and a combined CSV for downstream analysis.
 
 ---
 
-## Features
-- Aleatoric-uncertainty head (mean + logvar) with **deep ensemble support** (run the script multiple times with different `--seed`).
-- Chromosome-wise **sparse LD application**.
-- Outputs per-chromosome priors and a combined CSV.
+## System Requirements
+
+* **Operating System:** Linux (Recommended) or macOS
+* **Hardware:** NVIDIA GPU recommended for training (tested on RTX A5000, 24GB VRAM)
+* **Software:**
+    * Python 3.8+
+    * PyTorch (CUDA support recommended)
+    * NumPy, Pandas, Scikit-learn
+    * [LDAK](https://dougspeed.com/ldak/) (for downstream PRS calculation)
 
 ---
 
-## 1) Repository layout & data expectations
+## Installation
 
-```
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/Junnh/DeepU-PRS.git](https://github.com/Junnh/DeepU-PRS.git)
+    cd DeepU-PRS
+    ```
+
+2.  **Set up the environment:**
+    We recommend using Conda.
+    ```bash
+    conda create -n deepu-prs python=3.9
+    conda activate deepu-prs
+    pip install torch numpy pandas scipy
+    ```
+
+---
+
+## 1) Repository Layout & Data Expectations
+
+DeepU-PRS expects a specific directory layout for annotations, summary statistics, and LD files.
+
+```text
 <base_dir>/
-├─ annotations/annotation.csv                # per‑SNP features (columns: Predictor, feat1..featK)
-├─ summaries/train.summaries                 # summary stats for training (tab‑delimited)
-├─ summaries/test.summaries                  # summary stats for evaluation (tab‑delimited)
-├─ maf/plink.frq                             # reference MAF (columns: CHR, SNP, MAF, ...)
-└─ ld/
-   ├─ edge_index/chr{1..22}_edge_index.npy   # int indices; shape (2,E) or (E,2)
-   └─ ld_triplets/chrld_{1..22}.npy          # each row: [SNP_A, SNP_B, r2]
-```
+├── annotations/
+│   └── annotation.csv               # Per-SNP features (Predictor, feat1..featK)
+├── summaries/
+│   ├── train.summaries              # Summary stats for training (tab-delimited)
+│   └── test.summaries               # Summary stats for evaluation (tab-delimited)
+├── maf/
+│   └── plink.frq                    # Reference MAF (CHR, SNP, MAF...)
+└── ld/
 
 ### Required columns
 
@@ -178,71 +216,7 @@ done
 ## 6) Citation & license
 
 
-# DeepU-PRS
 
-**Uncertainty-aware Deep Prior Estimation for Polygenic Risk Scoring (PRS)**
-
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-1.12%2B-orange)](https://pytorch.org/)
-
-## Overview
-
-**DeepU-PRS** is a deep learning framework designed to improve Polygenic Risk Scoring by incorporating nonlinear functional annotations and modeling aleatoric uncertainty. This repository provides a cleaned, reproducible training script and minimal scaffolding to run DeepU‑PRS.
-
-> **Key Idea:** A fully connected (FC) network predicts SNP-level prior means and log-variances (aleatoric uncertainty) from functional annotations. These priors are propagated through sparse Linkage Disequilibrium (LD) structures to obtain architecture-aware effect-size priors for downstream Bayesian PRS models.
-
-### Key Features
-* **Aleatoric Uncertainty Modeling:** Predicts mean and log-variance with **deep ensemble support** (run the script multiple times with different `--seed`).
-* **Sparse LD Integration:** Efficiently applies chromosome-wise sparse LD matrices.
-* **Architecture-Aware:** Outputs per-chromosome priors and a combined CSV for downstream analysis.
-
----
-
-## System Requirements
-
-* **Operating System:** Linux (Recommended) or macOS
-* **Hardware:** NVIDIA GPU recommended for training (tested on RTX A5000, 24GB VRAM)
-* **Software:**
-    * Python 3.8+
-    * PyTorch (CUDA support recommended)
-    * NumPy, Pandas, Scikit-learn
-    * [LDAK](https://dougspeed.com/ldak/) (for downstream PRS calculation)
-
----
-
-## Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/Junnh/DeepU-PRS.git](https://github.com/Junnh/DeepU-PRS.git)
-    cd DeepU-PRS
-    ```
-
-2.  **Set up the environment:**
-    We recommend using Conda.
-    ```bash
-    conda create -n deepu-prs python=3.9
-    conda activate deepu-prs
-    pip install torch numpy pandas scipy
-    ```
-
----
-
-## 1) Repository Layout & Data Expectations
-
-DeepU-PRS expects a specific directory layout for annotations, summary statistics, and LD files.
-
-```text
-<base_dir>/
-├── annotations/
-│   └── annotation.csv               # Per-SNP features (Predictor, feat1..featK)
-├── summaries/
-│   ├── train.summaries              # Summary stats for training (tab-delimited)
-│   └── test.summaries               # Summary stats for evaluation (tab-delimited)
-├── maf/
-│   └── plink.frq                    # Reference MAF (CHR, SNP, MAF...)
-└── ld/
     ├── edge_index/
     │   └── chr{1..22}_edge_index.npy  # LD Indices; shape (2, E)
     └── ld_triplets/
