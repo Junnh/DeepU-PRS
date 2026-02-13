@@ -10,8 +10,6 @@ This repository provides a cleaned, reproducible training script and minimal sca
 ## Features
 - Aleatoric-uncertainty head (mean + logvar) with **deep ensemble support** (run the script multiple times with different `--seed`).
 - Chromosome-wise **sparse LD application**.
-- **Warmup**, **ReduceLROnPlateau** scheduler, **early stopping**, gradient clipping.
-- Deterministic seeds, structured logging, and argumentized paths (no hard-coded local paths).
 - Outputs per-chromosome priors and a combined CSV.
 
 ---
