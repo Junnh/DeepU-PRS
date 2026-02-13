@@ -73,6 +73,7 @@ DeepU-PRS expects a specific directory layout for annotations, summary statistic
 
 > The LD files are *looked up only*, not created, by this repo. Ensure your LD precomputation matches the SNP identifiers used in `summaries`.
 
+
 ---
 
 ## 3) Training script
@@ -214,10 +215,3 @@ done
 ---
 
 ## 6) Citation & license
-
-
-
-    ├── edge_index/
-    │   └── chr{1..22}_edge_index.npy  # LD Indices; shape (2, E)
-    └── ld_triplets/
-        └── chrld_{1..22}.npy          # LD Values; [SNP_A, SNP_B, r2]
