@@ -1,7 +1,6 @@
 # DeepU-PRS
 
 Uncertainty-aware deep prior estimation for polygenic risk scoring (PRS).
-This repository provides a cleaned, reproducible training script and minimal scaffolding to run DeepU‑PRS.
 
 > Key idea: a fully connected (FC) network predicts SNP-level prior means and log-variances (aleatoric uncertainty) from functional annotations. Priors are propagated through sparse LD to obtain architecture-aware effect-size priors for PRS.
 
