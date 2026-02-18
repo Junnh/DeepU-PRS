@@ -20,9 +20,6 @@
 ---
 
 ## System Requirements
-
-* **Operating System:** Linux (Recommended) or macOS
-* **Hardware:** NVIDIA GPU recommended for training (tested on RTX A5000, 24GB VRAM)
 * **Software:**
     * Python 3.8+
     * PyTorch (CUDA support recommended)
