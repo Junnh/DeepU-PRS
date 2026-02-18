@@ -27,25 +27,6 @@
     * [LDAK](https://dougspeed.com/ldak/) (for downstream PRS calculation)
 
 ---
-
-## Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/Junnh/DeepU-PRS.git](https://github.com/Junnh/DeepU-PRS.git)
-    cd DeepU-PRS
-    ```
-
-2.  **Set up the environment:**
-    We recommend using Conda.
-    ```bash
-    conda create -n deepu-prs python=3.9
-    conda activate deepu-prs
-    pip install torch numpy pandas scipy
-    ```
-
----
-
 ## 1) Repository Layout & Data Expectations
 
 DeepU-PRS expects a specific directory layout for annotations, summary statistics, and LD files.
