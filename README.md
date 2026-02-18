@@ -1,6 +1,6 @@
 # DeepU-PRS
 
-**Uncertainty-aware Deep Prior Estimation for Polygenic Risk Scoring (PRS)**
+**Nonlinear and Uncertainty-Aware SNP-Effect Estimation for Polygenic Risk Scoring**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
