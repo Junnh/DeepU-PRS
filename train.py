@@ -1,5 +1,3 @@
-"""DeepU-PRS v7 training script — single ensemble member.
-
 Trains one deep-ensemble member that maps per-SNP functional annotations to
 (heritability prior h², predictive variance σ²). Run this with M different
 seeds to produce the ensemble used downstream by make_ivw_prior.py and
