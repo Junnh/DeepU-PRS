@@ -69,7 +69,7 @@ DeepU-PRS/
 
 ## Dependencies
 
-See `requirements.txt`. Tested on Python 3.11, PyTorch 2.0+, `torch_geometric` 2.4, `pytorch_lamb` 1.0.
+See `requirements.txt`. Tested on Python 3.11, PyTorch 2.0+
 
 ## Input files
 
