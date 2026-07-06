@@ -1,198 +1,177 @@
 # DeepU-PRS
 
-**Nonlinear and Uncertainty-Aware SNP-Effect Estimation for Polygenic Risk Scoring**
+Nonlinear and uncertainty-aware SNP-heritability modeling for annotation-informed polygenic risk scoring.
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-1.12%2B-orange)](https://pytorch.org/)
+DeepU-PRS uses a deep ensemble of feed-forward networks over per-SNP functional annotations to predict a heritability prior **h²_j** and an aleatoric variance **σ²_j** for every SNP. The variance is then folded into a hyperparameter-free closed-form shrinkage — **DeepU-PRS (Adaptive)** — that is passed to LDAK MegaPRS (BayesR) for posterior effect-size estimation.
 
-## Overview
-
-**DeepU-PRS** is a deep learning framework designed to improve Polygenic Risk Scoring by incorporating nonlinear functional annotations and modeling aleatoric uncertainty. This repository provides a cleaned, reproducible training script and minimal scaffolding to run DeepU‑PRS.
-
-> **Key Idea:** A fully connected (FC) network predicts SNP-level prior means and log-variances (aleatoric uncertainty) from functional annotations. These priors are propagated through sparse Linkage Disequilibrium (LD) structures to obtain architecture-aware effect-size priors for downstream Bayesian PRS models.
-
-### Key Features
-* **Aleatoric Uncertainty Modeling:** Predicts mean and log-variance with **deep ensemble support** (run the script multiple times with different `--seed`).
-* **Sparse LD Integration:** Efficiently applies chromosome-wise sparse LD matrices.
-* **Architecture-Aware:** Outputs per-chromosome priors and a combined CSV for downstream analysis.
-
----
-
-## System Requirements
-* **Software:**
-    * Python 3.8+
-    * PyTorch (CUDA support recommended)
-    * NumPy, Pandas, Scikit-learn
-    * [LDAK](https://dougspeed.com/ldak/) (for downstream PRS calculation)
-
----
-## 1) Repository Layout & Data Expectations
-
-DeepU-PRS expects a specific directory layout for annotations, summary statistics, and LD files.
-
-```text
-<base_dir>/
-├── annotations/
-│   └── annotation.csv               # Per-SNP features (Predictor, feat1..featK)
-├── summaries/
-│   ├── train.summaries              # Summary stats for training (tab-delimited)
-│   └── test.summaries               # Summary stats for evaluation (tab-delimited)
-├── maf/
-│   └── plink.frq                    # Reference MAF (CHR, SNP, MAF...)
-└── ld/
+```
+GWAS summary stats + functional annotations
+             │
+             ▼
+   ┌──────────────────────────┐
+   │  DeepU-PRS network  (×M) │   train.py                (one seed at a time)
+   │  in : a_j (65 or 205 dim)│                           M-ensemble
+   │  out: (h²_j, log σ²_j)   │
+   └──────────────────────────┘
+             │
+             ▼
+   ┌──────────────────────────┐
+   │ Ensemble aggregation     │   make_ivw_prior.py
+   │   IVW h²                 │   (precision-weighted mean of h²
+   │   simple-mean σ²         │    + arithmetic mean of σ²)
+   └──────────────────────────┘
+             │
+             ▼
+   ┌──────────────────────────┐
+   │ Adaptive shrinkage       │   make_adaptive_prior.py
+   │ h²_adapt = h²_IVW ·      │
+   │   σ²_med / (σ²+σ²_med)   │
+   └──────────────────────────┘
+             │
+             ▼
+   ┌──────────────────────────┐
+   │ LDAK --mega-prs bayesr   │   external (Speed et al.)
+   └──────────────────────────┘
+             │
+             ▼
+        posterior β̂ (effects)
 ```
 
-### Required Columns
-Ensure your input files contain the following columns:
+## Adaptive shrinkage
 
-* **`annotations/annotation.csv`**
-    * Required: `Predictor`, `feat1`, `feat2`, ... (and other annotation features)
-    * *Note:* If the `chr` column is missing, the script will automatically extract it by parsing the `Predictor` column (expected format: `chr:pos:ref:alt`).
-* **`summaries/*.summaries`**
-    * Required: `Predictor` (SNP ID), `Stat` (Test statistic), `n` (Sample size).
-* **`maf/plink.frq`**
-    * Required: `CHR`, `SNP`, `MAF`.
+The principal deliverable of DeepU-PRS is a per-SNP heritability prior that has already absorbed the ensemble aleatoric variance through a closed-form Bayesian shrinkage:
 
-> **Important:** The LD files are *looked up only*, not created by this repository. Ensure your precomputed LD files use SNP identifiers consistent with those in your `summaries` file.
+> **h²_adapt,j = h²_IVW,j · ( σ²_med / (σ²_j + σ²_med) )**
 
----
+- **h²_IVW,j** — inverse-variance-weighted ensemble mean of per-SNP heritability across the M seeds.
+- **σ²_j** — simple mean of the ensemble aleatoric variance (`σ² = exp(log σ²)`) across seeds.
+- **σ²_med** — trait-specific median of σ²_j across all SNPs.
 
-## 2) Training Script
+Properties:
+- Monotone in σ²_j — noisier SNPs shrink harder.
+- Scale-equivariant — only the ratio σ²_j / σ²_med enters, so the shrinkage is invariant to global rescaling.
+- Hyperparameter-free — no validation tuning, no test leakage.
+- Edge behavior: σ²_j ≪ σ²_med → factor ≈ 1 (keep), σ²_j = σ²_med → factor = 0.5, σ²_j ≫ σ²_med → factor ≈ 0 (shrink to zero).
 
-The main training script is `deepu_prs_refactored.py`.
+## Repository layout
+
+```
+DeepU-PRS/
+├── README.md                    # this file
+├── LICENSE                      # MIT
+├── requirements.txt             # Python deps
+├── train.py                     # Train one ensemble member (v7 log-Stat NLL)
+├── make_ivw_prior.py            # M-seed aggregation: IVW h² + simple-mean σ²
+├── make_adaptive_prior.py       # Closed-form adaptive shrinkage
+├── pytorchtools.py              # RelativeEarlyStopping (vendored)
+├── docs/
+│   └── architecture.md          # Model + loss details
+└── scripts/
+    └── run_ensemble.sh          # End-to-end wrapper for one trait
+```
+
+## Dependencies
+
+See `requirements.txt`. Tested on Python 3.11, PyTorch 2.0+, `torch_geometric` 2.4, `pytorch_lamb` 1.0.
+
+## Input files
+
+Every path below is passed to `train.py` via CLI (no hard-coded absolute paths).
+
+| Flag | Format | Description |
+|------|--------|-------------|
+| `--data_root` | directory | Root that holds `<file_path>/neale.train.summaries` and per-chr tensor caches (auto-created on the first run) |
+| `--file_path` | subdir name | Trait label used as a subdir under `data_root` (e.g. `HDL`) |
+| `--biomarker` | string | Lowercase alias printed in logs (e.g. `hdl`) |
+| `--pca` | bool | `True` → 205-feature input (functional + Enformer PCA); `False` → 65-feature |
+| `--annot_65` | csv | Per-SNP 65-feature annotation matrix. First column `Predictor`, remainder features. Used when `--pca False`. |
+| `--annot_205` | csv | Per-SNP 205-feature annotation matrix. Same shape convention. Used when `--pca True`. |
+| `--maf` | plink `.frq` | Reference allele-frequency file with columns `CHR SNP A1 A2 MAF NCHROBS` |
+| `--ld_root` | directory | Contains `<r2_coverage>/chrld_<c>.npy` (pair,pair,R²) and `<r2_coverage>/chr<c>_edge_index.npy` (2 × N_pairs) for each chromosome |
+| `--r2_coverage` | subdir name | LD subdir label (default `cut_0.01`) |
+| `--lr` | float | Learning rate (paper uses `0.001`) |
+| `--seed` | int | Ensemble-member RNG seed; the same value bit-reproduces the training run on the same hardware/PyTorch build. |
+| `--ver` | string | Version tag embedded in output filenames (paper uses `18607`) |
+
+The GWAS summary statistics file itself is expected at `<data_root>/<file_path>/neale.train.summaries` in LDAK whitespace format (`Predictor A1 A2 Direction Stat n`).
+
+Because the input files are large (annotation matrix ~a few GB, LD graphs ~tens of GB), they are hosted separately from the code — see the release notes for the download link and layout instructions.
+
+## Quick start (HDL example)
 
 ```bash
-python deepu_prs_refactored.py \
-  --file_path HDL \
-  --pca true \
-  --lr 1e-3 \
-  --seed 2025 \
-  --ver v1 \
-  --base_dir /path/to/base_dir \
-  --output_dir /path/to/output_dir
-```
-### Arguments
-
-* `--file_path` *(str, required)*: used only to name the output subfolder.
-* `--pca` *(bool)*: if `true`, use the deeper FC head (“enformer” mode); else compact head (“deep\_imp0”).
-* `--lr` *(float, required)*: learning rate for **LAMB** (built‑in minimal implementation).
-* `--seed` *(int, required)*: random seed.
-* `--ver` *(str)*: version tag for output filenames. Default `v1`.
-* `--base_dir` *(path)*: directory containing the data layout shown above.
-* `--output_dir` *(path)*: where to save artifacts. Defaults to `<base_dir>/<file_path>`.
-* (advanced) `--epochs`, `--patience`, `--warmup_epochs`, `--weight_decay`, `--clip_grad_norm`, `--min_var`, `--max_var`.
-
-### Outputs
-
-Files are written under:
-
-```
-<output_dir>/<mode>/
-  where <mode> = enformer (if --pca true) else deep_imp0
-```
-
-with filename prefix:
-
-```
-f{VER}_lr{LR}_seed{SEED}
-```
-
-Exported files:
-
-* `*.noamb.ind.her` (TSV, no header): `Predictor\tHeritability`
-* `*.noamb.ind.her.pos` (TSV, no header): only positive heritabilities
-* `*.noamb_snps.txt` (one column): SNPs used in the positive set
-* `*.noamb.ind.her.logvar.csv` (CSV): `Predictor,Heritability,logvar`
-
----
-
-## 3) LDAK evaluation: end‑to‑end shell example
-
-Below is a **generic** workflow for training effects via LDAK `--mega-prs` (BayesR) and computing scores on a held‑out summary set. Replace paths in brackets with your own.
-
-> **Assumptions**
->
-> * LDAK binary at `$LDAK_BIN` (e.g., `/path/to/ldak` or `/path/to/ldak.out`).
-> * Correlation and high‑LD resources are prepared (`--cors`, `--high-LD`).
-> * Training/test summary files at `<base_dir>/summaries/{train,test}.summaries`.
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-# ---- user config ----
-BASE_DIR="/path/to/base_dir"          # data root (see layout)
-OUT_ROOT="/path/to/output_root"       # where deepu_prs_refactored.py writes outputs
-LDAK_BIN="/path/to/ldak.out"          # ldak executable
-BFILE="/path/to/plink_prefix"         # plink bed/bim/fam without extension
-CORS_DIR="/path/to/cors"              # ldak --cors directory
-HIGHLD_FILE="/path/to/highld.predictors"  # file passed to --high-LD / --exclude
-
-TRAIT="HDL"            # used only for naming subfolder
-PCA_MODE="enformer"    # "enformer" (pca=true) or "deep_imp0" (pca=false)
-LR=0.001
-VER="v1"
-SEEDS=(2023)
-
-# optional: run the training script (one seed shown)
-for SEED in "${SEEDS[@]}"; do
-  python deepu_prs_refactored.py \
-    --file_path "$TRAIT" \
-    --pca $([[ "$PCA_MODE" == "enformer" ]] && echo true || echo false) \
-    --lr "$LR" \
-    --seed "$SEED" \
-    --ver "$VER" \
-    --base_dir "$BASE_DIR" \
-    --output_dir "$OUT_ROOT"
-
+# 1. Train M=5 ensemble members, one per seed.
+for s in 2023 2024 2025 2026 2027; do
+  python -u train.py \
+      --data_root  ./data \
+      --file_path  HDL \
+      --biomarker  hdl \
+      --pca        True \
+      --annot_205  ./data/annot_205.csv \
+      --maf        ./data/plink.frq \
+      --ld_root    ./ld \
+      --r2_coverage cut_0.01 \
+      --lr         0.001 \
+      --seed       ${s} \
+      --ver        18607
 done
+# per-SNP h² and σ² are written under ./data/HDL/enformer_new/
 
-# LDAK: fit BayesR and compute PRS scores per seed
-for SEED in "${SEEDS[@]}"; do
-  MODE_DIR="$OUT_ROOT/$([[ "$PCA_MODE" == "enformer" ]] && echo enformer || echo deep_imp0)"
-  PREFIX="${MODE_DIR}/f${VER}_lr${LR}_seed${SEED}"
+# 2. Aggregate across the ensemble: IVW h² + simple-mean σ².
+python make_ivw_prior.py \
+    --seeds   ./data/HDL/enformer_new/seed_2023 \
+              ./data/HDL/enformer_new/seed_2024 \
+              ./data/HDL/enformer_new/seed_2025 \
+              ./data/HDL/enformer_new/seed_2026 \
+              ./data/HDL/enformer_new/seed_2027 \
+    --out_dir ./data/HDL/enformer_new/
 
-  # 1) Fit effects with BayesR using per‑SNP priors
-  "$LDAK_BIN" --mega-prs "${MODE_DIR}/f${VER}_bayesr_lr${LR}_seed${SEED}" \
-    --model bayesr \
-    --ind-hers   "${PREFIX}.noamb.ind.her.pos" \
-    --summary    "${BASE_DIR}/summaries/train.summaries" \
-    --cors       "$CORS_DIR" \
-    --cv-proportion .1 \
-    --high-LD    "$HIGHLD_FILE" \
-    --window-cm  1 \
-    --extract    "${PREFIX}.noamb_snps.txt" \
-    --allow-ambiguous NO
+# 3. Adaptive shrinkage → LDAK-ready heritability prior.
+python make_adaptive_prior.py \
+    --h2_ivw  ./data/HDL/enformer_new/h2_ivw.ind.her.pos.ens_ivw \
+    --sigma2  ./data/HDL/enformer_new/sigma2_simple.ind.var.ens_simple \
+    --out_dir ./data/HDL/enformer_new/
 
-  # 2) Score on a held‑out set (effects produced by the step above)
-  "$LDAK_BIN" --calc-scores "${MODE_DIR}/f${VER}_scores_lr${LR}_seed${SEED}" \
-    --bfile     "$BFILE" \
-    --scorefile "${MODE_DIR}/f${VER}_bayesr_lr${LR}_seed${SEED}.effects" \
-    --power     0 \
-    --summary   "${BASE_DIR}/summaries/test.summaries" \
-    --allow-ambiguous NO \
-    --exclude   "$HIGHLD_FILE"
+# 4. LDAK MegaPRS BayesR with the adaptive prior.
+ldak --mega-prs ./data/HDL/enformer_new/bayesr_adaptive \
+     --model bayesr \
+     --ind-hers ./data/HDL/enformer_new/_noamb.ind.her.pos.adaptive \
+     --summary  ./data/HDL/neale.train.summaries \
+     --cors     ./ld/HDL_cors \
+     --high-LD  ./ld/highld.snplist \
+     --extract  ./data/HDL/enformer_new/_noamb_snps.adaptive.txt \
+     --allow-ambiguous NO --window-cm 1 --cv-proportion .1
 
-done
+# 5. Score on a held-out cohort.
+ldak --calc-scores ./data/HDL/enformer_new/scores_adaptive \
+     --bfile     ./data/holdout_cohort \
+     --scorefile ./data/HDL/enformer_new/bayesr_adaptive.effects \
+     --power 0 \
+     --summary   ./data/HDL/neale.test.summaries \
+     --allow-ambiguous NO
 ```
 
-### Notes & mapping to outputs
+`scripts/run_ensemble.sh` bundles steps 1–2 into a single call.
 
-* `--ind-hers` and `--extract` point to the files emitted by this repo.
-* You control seed sweeps with `SEEDS=(...)`.
-* `PCA_MODE` controls which subfolder the training writes to, and later which subfolder LDAK reads from.
-* `--summary` uses your own training/test sets; the script only reads `train.summaries`.
+## Released HDL pre-trained weights
 
----
+To keep the code repository lightweight, we ship the pre-trained checkpoints for a single representative trait (**HDL**) as a worked example:
 
-## 5) Tips & troubleshooting
+- 5 ensemble seeds (`f18607_..._imp3.{2023..2027}.pt`)
+- Corresponding per-SNP prior / logvar tensors used in the paper
 
-* **Shapes**: Ensure `edge_index.npy` has shape `(2, E)` (else it’s transposed). `chrld_*.npy` should have three columns: `PredictorA, PredictorB, r2`.
-* **SNP ID consistency**: The intersection logic keeps LD edges only if **both SNPs** exist in `summaries` for that chromosome.
-* **Guard on `Stat`**: Non‑positive `Stat` is clamped to `1e-6`.
-* **Output filtration**: `*.noamb.ind.her.pos` keeps only positive prior means, commonly used for LDAK BayesR.
+Users can either:
+1. **Reproduce the HDL result** by dropping these checkpoints into `./data/HDL/enformer_new/` and skipping step 1 above (jump straight to `make_ivw_prior.py`).
+2. **Apply the method to any other trait** by running the full pipeline (steps 1–5) using their own GWAS summary statistics; the released annotation matrix and LD files are reusable across traits.
 
----
+Retraining from scratch with the same `--seed` values reproduces our training run bit-for-bit on the same hardware / PyTorch build. Downloading and using the released weights is deterministic regardless of local RNG state, since inference runs in `eval()` mode.
 
-## 6) Citation & license
+Per-trait training weights for the remaining 30 phenotypes are not shipped because doing so is not practical at scale; running `train.py` for any other trait takes about 1 hour per seed on a single RTX PRO 6000, so users can obtain any missing model by running the same command with the appropriate summary statistics.
+
+## Citation
+
+Park et al. — *DeepU-PRS: Nonlinear and Uncertainty-Aware SNP Heritability Modeling for Annotation-Informed Polygenic Risk Scoring*.
+
+## License
+
+MIT (see `LICENSE`).
