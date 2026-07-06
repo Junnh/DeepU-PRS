@@ -58,7 +58,6 @@ Properties:
 ```
 DeepU-PRS/
 ├── README.md                    # this file
-├── LICENSE                      # MIT
 ├── requirements.txt             # Python deps
 ├── train.py                     # Train one ensemble member (v7 log-Stat NLL)
 ├── make_ivw_prior.py            # M-seed aggregation: IVW h² + simple-mean σ²
@@ -154,7 +153,3 @@ ldak --calc-scores ./data/HDL/enformer_new/scores_adaptive \
 ## Citation
 
 *DeepU-PRS: Nonlinear and Uncertainty-Aware SNP Heritability Modeling for Annotation-Informed Polygenic Risk Scoring*.
-
-## License
-
-MIT (see `LICENSE`).
