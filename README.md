@@ -58,14 +58,11 @@ Properties:
 ```
 DeepU-PRS/
 ├── README.md                    # this file
-├── LICENSE                      # MIT
 ├── requirements.txt             # Python deps
 ├── train.py                     # Train one ensemble member (v7 log-Stat NLL)
 ├── make_ivw_prior.py            # M-seed aggregation: IVW h² + simple-mean σ²
 ├── make_adaptive_prior.py       # Closed-form adaptive shrinkage
 ├── pytorchtools.py              # RelativeEarlyStopping (vendored)
-├── docs/
-│   └── architecture.md          # Model + loss details
 └── scripts/
     └── run_ensemble.sh          # End-to-end wrapper for one trait
 ```
@@ -153,25 +150,8 @@ ldak --calc-scores ./data/HDL/enformer_new/scores_adaptive \
 
 `scripts/run_ensemble.sh` bundles steps 1–3 into a single call.
 
-## Released HDL pre-trained weights
-
-To keep the code repository lightweight, we ship the pre-trained checkpoints for a single representative trait (**HDL**) as a worked example:
-
-- 5 ensemble seeds (`f18607_..._imp3.{2023..2027}.pt`)
-- Corresponding per-SNP prior / logvar tensors used in the paper
-
-Users can either:
-1. **Reproduce the HDL result** by dropping these checkpoints into `./data/HDL/enformer_new/` and skipping step 1 above (jump straight to `make_ivw_prior.py`).
-2. **Apply the method to any other trait** by running the full pipeline (steps 1–5) using their own GWAS summary statistics; the released annotation matrix and LD files are reusable across traits.
-
-Retraining from scratch with the same `--seed` values reproduces our training run bit-for-bit on the same hardware / PyTorch build. Downloading and using the released weights is deterministic regardless of local RNG state, since inference runs in `eval()` mode.
-
-Per-trait training weights for the remaining 30 phenotypes are not shipped because doing so is not practical at scale; running `train.py` for any other trait takes about 1 hour per seed on a single RTX PRO 6000, so users can obtain any missing model by running the same command with the appropriate summary statistics.
-
 ## Citation
 
-Park et al. — *DeepU-PRS: Nonlinear and Uncertainty-Aware SNP Heritability Modeling for Annotation-Informed Polygenic Risk Scoring*.
-
-## License
+*DeepU-PRS: Nonlinear and Uncertainty-Aware SNP Heritability Modeling for Annotation-Informed Polygenic Risk Scoring*.
 
 MIT (see `LICENSE`).
