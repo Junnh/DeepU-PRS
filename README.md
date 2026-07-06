@@ -62,7 +62,6 @@ DeepU-PRS/
 ├── train.py                     # Train one ensemble member (v7 log-Stat NLL)
 ├── make_ivw_prior.py            # M-seed aggregation: IVW h² + simple-mean σ²
 ├── make_adaptive_prior.py       # Closed-form adaptive shrinkage
-├── pytorchtools.py              # RelativeEarlyStopping (vendored)
 └── scripts/
     └── run_ensemble.sh          # End-to-end wrapper for one trait
 ```
