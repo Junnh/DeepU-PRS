@@ -153,5 +153,3 @@ ldak --calc-scores ./data/HDL/enformer_new/scores_adaptive \
 ## Citation
 
 *DeepU-PRS: Nonlinear and Uncertainty-Aware SNP Heritability Modeling for Annotation-Informed Polygenic Risk Scoring*.
-
-MIT (see `LICENSE`).
