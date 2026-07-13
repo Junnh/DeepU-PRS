@@ -88,6 +88,20 @@ Every path below is passed to `train.py` via CLI (no hard-coded absolute paths).
 | `--seed` | int | Ensemble-member RNG seed; the same value bit-reproduces the training run on the same hardware/PyTorch build. |
 | `--ver` | string | Version tag embedded in output filenames (paper uses `18607`) |
 
+## LD reference files (edge index and R²)
+**`chr{N}_edge_index.npy`** — 2D array of SNP index pairs for LD-linked SNPs on chromosome N
+- Shape: `(N_pairs, 2)`, dtype `int64`
+- Column 0: index of SNP_A. **The index is the 0-indexed position of that SNP within the per-chromosome subset of the GWAS summary statistics file**
+- Column 1: index of SNP_B (same convention).
+- Only SNP pairs with R² above the coverage threshold (default `cut_0.01`, i.e., R² > 0.01) are included.
+- Because the indices reference the summary-statistics SNP order, the annotation matrix and MAF file must be aligned to that same per-chromosome SNP order at training time. `train.py` performs this alignment internally by filtering both to the summary SNP set.
+
+**`chrld_{N}.npy`** — accompanying R² values as SNP-ID triples
+- Shape: `(N_pairs, 3)`, dtype `object`
+- Column 0: SNP_A predictor (string, format `<chr>:<pos>`)
+- Column 1: SNP_B predictor (string, same format)
+- Column 2: R² value (float, > 0.01)
+
 The GWAS summary statistics file itself is expected at `<data_root>/<file_path>/neale.train.summaries` in LDAK whitespace format (`Predictor A1 A2 Direction Stat n`).
 
 Because the input files are large (annotation matrix ~a few GB, LD graphs ~tens of GB), they are hosted separately from the code
@@ -96,7 +110,7 @@ Because the input files are large (annotation matrix ~a few GB, LD graphs ~tens 
 
 ```bash
 # 1. Train M=5 ensemble members, one per seed.
-for s in 2023 2024 2025 2026 2027; do
+for s in seed_1~seed_N; do
   python -u train.py \
       --data_root  ./data \
       --file_path  HDL \
@@ -108,39 +122,39 @@ for s in 2023 2024 2025 2026 2027; do
       --r2_coverage cut_0.01 \
       --lr         0.001 \
       --seed       ${s} \
-      --ver        18607
+      --ver        test1
 done
-# per-SNP h² and σ² are written under ./data/HDL/enformer_new/
+# per-SNP h² and σ² are written under ./data/HDL/annot205/
 
 # 2. Aggregate across the ensemble: IVW h² + simple-mean σ².
 python make_ivw_prior.py \
-    --input_dir   ./data/HDL/enformer_new \
-    --seeds       2023 2024 2025 2026 2027 \
-    --ver         18607 \
+    --input_dir   ./data/HDL/annot205 \
+    --seeds       seed_1~seed_N \
+    --ver         test1 \
     --lr          0.001 \
     --r2_coverage cut_0.01 \
-    --out_dir     ./data/HDL/enformer_new
+    --out_dir     ./data/HDL/annot205
 
 # 3. Adaptive shrinkage → LDAK-ready heritability prior.
 python make_adaptive_prior.py \
-    --h2_ivw  ./data/HDL/enformer_new/h2_ivw.ind.her.pos.ens_ivw \
-    --sigma2  ./data/HDL/enformer_new/sigma2_simple.ind.var.ens_simple \
-    --out_dir ./data/HDL/enformer_new
+    --h2_ivw  ./data/HDL/annot205/h2_ivw.ind.her.pos.ens_ivw \
+    --sigma2  ./data/HDL/annot205/sigma2_simple.ind.var.ens_simple \
+    --out_dir ./data/HDL/annot205
 
 # 4. LDAK MegaPRS BayesR with the adaptive prior.
-ldak --mega-prs ./data/HDL/enformer_new/bayesr_adaptive \
+ldak --mega-prs ./data/HDL/annot205/bayesr_adaptive \
      --model bayesr \
-     --ind-hers ./data/HDL/enformer_new/_noamb.ind.her.pos.adaptive \
+     --ind-hers ./data/HDL/annot205/_noamb.ind.her.pos.adaptive \
      --summary  ./data/HDL/neale.train.summaries \
      --cors     ./ld/HDL_cors \
      --high-LD  ./ld/highld.snplist \
-     --extract  ./data/HDL/enformer_new/_noamb_snps.adaptive.txt \
+     --extract  ./data/HDL/annot205/_noamb_snps.adaptive.txt \
      --allow-ambiguous NO --window-cm 1 --cv-proportion .1
 
 # 5. Score on a held-out cohort.
-ldak --calc-scores ./data/HDL/enformer_new/scores_adaptive \
+ldak --calc-scores ./data/HDL/annot205/scores_adaptive \
      --bfile     ./data/holdout_cohort \
-     --scorefile ./data/HDL/enformer_new/bayesr_adaptive.effects \
+     --scorefile ./data/HDL/annot205/bayesr_adaptive.effects \
      --power 0 \
      --summary   ./data/HDL/neale.test.summaries \
      --allow-ambiguous NO
