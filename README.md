@@ -80,7 +80,6 @@ Every path below is passed to `train.py` via CLI (no hard-coded absolute paths).
 | `--file_path` | subdir name | Trait label used as a subdir under `data_root` (e.g. `HDL`) |
 | `--biomarker` | string | Lowercase alias printed in logs (e.g. `hdl`) |
 | `--pca` | bool | `True` → 205-feature input (functional + Enformer PCA); `False` → 65-feature |
-| `--annot_65` | csv | Per-SNP 65-feature annotation matrix. First column `Predictor`, remainder features. Used when `--pca False`. |
 | `--annot_205` | csv | Per-SNP 205-feature annotation matrix. Same shape convention. Used when `--pca True`. |
 | `--maf` | plink `.frq` | Reference allele-frequency file with columns `CHR SNP A1 A2 MAF NCHROBS` |
 | `--ld_root` | directory | Contains `<r2_coverage>/chrld_<c>.npy` (pair,pair,R²) and `<r2_coverage>/chr<c>_edge_index.npy` (2 × N_pairs) for each chromosome |
@@ -91,7 +90,7 @@ Every path below is passed to `train.py` via CLI (no hard-coded absolute paths).
 
 The GWAS summary statistics file itself is expected at `<data_root>/<file_path>/neale.train.summaries` in LDAK whitespace format (`Predictor A1 A2 Direction Stat n`).
 
-Because the input files are large (annotation matrix ~a few GB, LD graphs ~tens of GB), they are hosted separately from the code — see the release notes for the download link and layout instructions.
+Because the input files are large (annotation matrix ~a few GB, LD graphs ~tens of GB), they are hosted separately from the code
 
 ## Quick start (HDL example)
 
