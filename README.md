@@ -59,7 +59,7 @@ Properties:
 DeepU-PRS/
 ├── README.md                    # this file
 ├── requirements.txt             # Python deps
-├── train.py                     # Train one ensemble member (v7 log-Stat NLL)
+├── train.py                     # Train one ensemble member
 ├── make_ivw_prior.py            # M-seed aggregation: IVW h² + simple-mean σ²
 ├── make_adaptive_prior.py       # Closed-form adaptive shrinkage
 └── scripts/
