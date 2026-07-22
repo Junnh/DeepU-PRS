@@ -72,7 +72,7 @@ See `requirements.txt`. Tested on Python 3.11, PyTorch 2.0+
 
 ## Input files
 
-Every path below is passed to `train.py` via CLI (no hard-coded absolute paths).
+Every path below is passed to `train.py` via CLI.
 
 | Flag | Format | Description |
 |------|--------|-------------|
@@ -85,7 +85,7 @@ Every path below is passed to `train.py` via CLI (no hard-coded absolute paths).
 | `--ld_root` | directory | Contains `<r2_coverage>/chrld_<c>.npy` (pair,pair,R²) and `<r2_coverage>/chr<c>_edge_index.npy` (2 × N_pairs) for each chromosome |
 | `--r2_coverage` | subdir name | LD subdir label (default `cut_0.01`) |
 | `--lr` | float | Learning rate (paper uses `0.001`) |
-| `--seed` | int | Ensemble-member RNG seed; the same value bit-reproduces the training run on the same hardware/PyTorch build. |
+| `--seed` | int | Ensemble-member seed |
 | `--ver` | string | Version tag embedded in output filenames (paper uses `18607`) |
 
 ## LD reference files (edge index and R²)
@@ -104,7 +104,14 @@ Every path below is passed to `train.py` via CLI (no hard-coded absolute paths).
 
 The GWAS summary statistics file itself is expected at `<data_root>/<file_path>/neale.train.summaries` in LDAK whitespace format (`Predictor A1 A2 Direction Stat n`).
 
-Because the input files are large (annotation matrix ~a few GB, LD graphs ~tens of GB), they are hosted separately from the code
+Because the input files are large, they are hosted separately from the code
+
+## Data
+
+Input annotations and example priors: **[10.5281/zenodo.21341238](https://doi.org/10.5281/zenodo.21341238)** 
+
+- `annot_all_mmscaled.csv.parquet` — per-SNP annotation matrix (`Predictor` + 205 features). Pass via `--annot_205`.
+- `HDL_r2-cut_0.01_lr0.001_noamb.ind.her.pos.adaptive` (+ `_snps.adaptive.txt`) — example DeepU-PRS (Adaptive) SNP heritability prior for HDL, ready for LDAK MegaPRS.
 
 ## Quick start (HDL example)
 
